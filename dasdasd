@@ -1,0 +1,120 @@
+// ==UserScript==
+// @name         Custom Rank changer
+// @namespace    http://tampermonkey.net/
+// @version      1.8
+// @description  Make By: Moka
+// @match        https://miniblox.io/*
+// @grant        none
+// @icon         https://miniblox.io/favicon.png
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+
+    const TARGET_NAME = 'BlitzX';
+    const PREFIX_TEXT = '[YOUTUBE]';
+    const USER_TEXT = 'BlitzX';
+
+    const HANDWRITTEN_FONT = '"Comic Sans MS", "Segoe Print", cursive';
+
+
+    const ICON_URL =
+        'https://yt3.googleusercontent.com/wavHcs92ACYX0zLBvKhu5V2lFbqCd7jB9gLzEIMFlmg1v5TPIjkOlmfu1VXa7SrJvBo_ijjy=s160-c-k-c0x00ffffff-no-rj';
+
+    const ICON_SIZE = 60;
+    const NAME_OFFSET_Y = 25;
+    const ICON_OFFSET_Y = 10;
+    const SPACING = 10;
+
+
+
+    const iconImage = new Image();
+    iconImage.crossOrigin = 'anonymous';
+    iconImage.src = ICON_URL;
+
+    const originalFillText = CanvasRenderingContext2D.prototype.fillText;
+
+    CanvasRenderingContext2D.prototype.fillText = function (text, x, y, maxWidth) {
+
+        if (typeof text === 'string' && text.includes(TARGET_NAME)) {
+            const ctx = this;
+            ctx.save();
+
+            ctx.font = `bold 36px ${HANDWRITTEN_FONT}`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+
+            const drawY = y + NAME_OFFSET_Y;
+
+            const prefixWidth = ctx.measureText(PREFIX_TEXT).width;
+            const userWidth = ctx.measureText(USER_TEXT).width;
+            const totalWidth = prefixWidth + userWidth + SPACING;
+
+            const startX = x - totalWidth / 2;
+
+
+            const gradientPrefix = ctx.createLinearGradient(
+                startX,
+                drawY,
+                startX + prefixWidth,
+                drawY
+            );
+            gradientPrefix.addColorStop(0, '#FFC0CB');
+            gradientPrefix.addColorStop(1, '#FFC0CB');
+
+            const gradientUser = ctx.createLinearGradient(
+                startX + prefixWidth + SPACING,
+                drawY,
+                startX + totalWidth,
+                drawY
+            );
+            gradientUser.addColorStop(0, '#ffffff');
+            gradientUser.addColorStop(1, '#dddddd');
+
+
+            ctx.shadowColor = 'rgba(255,255,255,0.9)';
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = gradientPrefix;
+            originalFillText.call(ctx, PREFIX_TEXT, startX, drawY, maxWidth);
+
+
+            ctx.shadowColor = 'rgba(255,255,255,0.7)';
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = gradientUser;
+            originalFillText.call(
+                ctx,
+                USER_TEXT,
+                startX + prefixWidth + SPACING,
+                drawY,
+                maxWidth
+            );
+
+
+            if (iconImage.complete && iconImage.naturalWidth > 0) {
+                const iconX =
+                    startX + prefixWidth + SPACING + userWidth + 5;
+                const iconY =
+                    drawY - ICON_SIZE / 2 - ICON_OFFSET_Y;
+
+                ctx.drawImage(iconImage, iconX, iconY, ICON_SIZE, ICON_SIZE);
+            }
+
+            ctx.restore();
+            return;
+        }
+
+
+        if (typeof text === 'string' && text.includes('[PRO]')) {
+            this.save();
+            text = text.replace('[PRO]', '　');
+            this.fillStyle = 'pink';
+            x -= 20;
+            const r = originalFillText.call(this, text, x, y, maxWidth);
+            this.restore();
+            return r;
+        }
+
+        return originalFillText.call(this, text, x, y, maxWidth);
+    };
+})();
